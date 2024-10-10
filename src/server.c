@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,11 +15,13 @@
 
 void *start_listening(void *arg);
 int   apply_filter(const char *filter, char *msg, size_t msg_size);
+void  cleanup(int sig);
 
 int main(void)
 {
     int       fd;
     pthread_t listenerThread;
+    signal(SIGINT, cleanup);
 
     // Make FIFO's
     mkfifo(CLIENT_PATH, PERMISSION);
@@ -28,16 +31,21 @@ int main(void)
     {
         // Open the file descriptor to read only
         fd = open(CLIENT_PATH, O_RDONLY | O_CLOEXEC);
+        if((fd == -1) & (SIGINT == 2))
+        {
+            printf("\nClosing server and exiting program\n");
+            return EXIT_SUCCESS;
+        }
         if(fd == -1)
         {
-            fprintf(stderr, "Error: Could not open client FIFO on server end");
+            fprintf(stderr, "Error: Could not open client FIFO on server end\n");
             return EXIT_FAILURE;
         }
 
         // Create a thread to start listening for incoming messages
         if(pthread_create(&listenerThread, NULL, start_listening, (void *)&fd) != 0)
         {
-            fprintf(stderr, "Error: could not creating thread");
+            fprintf(stderr, "Error: could not creating thread\n");
             goto cleanup;
         }
 
@@ -51,6 +59,13 @@ cleanup:
     unlink(CLIENT_PATH);
     unlink(SERVER_PATH);
     return EXIT_FAILURE;
+}
+
+void cleanup(int sig)
+{
+    (void)sig;
+    unlink(CLIENT_PATH);
+    unlink(SERVER_PATH);
 }
 
 int apply_filter(const char *filter, char *msg, size_t msg_size)
