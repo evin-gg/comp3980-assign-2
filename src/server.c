@@ -51,6 +51,7 @@ int main(void)
 
         // Wait for the listener thread to finish
         pthread_join(listenerThread, NULL);
+        close(fd);
     }
 
     // Cleanup upon error
