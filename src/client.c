@@ -44,6 +44,11 @@ int main(int argc, char *argv[])
         {
             case 'f':
                 filter = optarg;
+                if(strcmp(filter, "upper") != 0 && strcmp(filter, "lower") != 0 && strcmp(filter, "none") != 0)
+                {
+                    fprintf(stderr, "Error: Invalid filter\n");
+                    return EXIT_FAILURE;
+                }
                 break;
             case 'm':
                 message = optarg;
@@ -100,7 +105,7 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    printf("%s\n", incomingMsg);
+    printf("Recieved Message: %s\n", incomingMsg);
     close(clientfd);
     close(serverfd);
     return EXIT_SUCCESS;

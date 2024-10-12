@@ -13,7 +13,7 @@
 #define SERVER_PATH "/tmp/server_fifo"
 #define PERMISSION 0666
 
-void *start_listening(void *arg);
+void *recieve_message(void *arg);
 int   apply_filter(const char *filter, char *msg, size_t msg_size);
 void  cleanup(int sig);
 
@@ -27,6 +27,7 @@ int main(void)
     mkfifo(CLIENT_PATH, PERMISSION);
     mkfifo(SERVER_PATH, PERMISSION);
 
+    printf("Started listening...\n");
     while(1)
     {
         // Open the file descriptor to read only
@@ -43,7 +44,7 @@ int main(void)
         }
 
         // Create a thread to start listening for incoming messages
-        if(pthread_create(&listenerThread, NULL, start_listening, (void *)&fd) != 0)
+        if(pthread_create(&listenerThread, NULL, recieve_message, (void *)&fd) != 0)
         {
             fprintf(stderr, "Error: could not creating thread\n");
             goto cleanup;
@@ -107,7 +108,7 @@ int apply_filter(const char *filter, char *msg, size_t msg_size)
     return -1;
 }
 
-void *start_listening(void *arg)
+void *recieve_message(void *arg)
 {
     int  serverfd;
     int  clientfd = *((int *)arg);    // Cast and dereference the argument
@@ -119,9 +120,11 @@ void *start_listening(void *arg)
     ssize_t     bytesRead = read(clientfd, buff, BUFFER_SIZE - 1);
     if(bytesRead == -1)
     {
-        fprintf(stderr, "Error: couldn't read from FIFO");
+        fprintf(stderr, "Error: couldn't read from FIFO\n");
         pthread_exit(NULL);
     }
+
+    printf("Recieved data...\n");
 
     // Null terminate the end of the buffer
     buff[bytesRead] = '\0';
@@ -141,15 +144,16 @@ void *start_listening(void *arg)
     // Compare the strings and apply the filter
     if(apply_filter(filter, message, BUFFER_SIZE) == -1)
     {
-        fprintf(stderr, "Error: Filter is invalid");
+        fprintf(stderr, "Error: Filter is invalid\n");
         close(serverfd);
         pthread_exit(NULL);
     }
 
+    printf("Sending requested data back...\n");
     // Write back to the other server
     if(write(serverfd, message, BUFFER_SIZE - 1) == -1)
     {
-        fprintf(stderr, "Error trying to write to server FIFO");
+        fprintf(stderr, "Error trying to write to server FIFO\n");
         close(serverfd);
         pthread_exit(NULL);
     }
