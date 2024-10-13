@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
                 if(strcmp(filter, "upper") != 0 && strcmp(filter, "lower") != 0 && strcmp(filter, "none") != 0)
                 {
                     fprintf(stderr, "Error: Invalid filter\n");
+                    fprintf(stderr, "Usage for -f:\n  -upper\n  -lower\n  -none\n");
                     return EXIT_FAILURE;
                 }
                 break;
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
                 message = optarg;
                 break;
             default:
-                fprintf(stderr, "Usage: -a argument -m message\n");
+                fprintf(stderr, "Usage: -f filter -m message\n");
                 return EXIT_FAILURE;
         }
     }
@@ -62,6 +63,7 @@ int main(int argc, char *argv[])
     if(filter == NULL || message == NULL)
     {
         fprintf(stderr, "Error: filter or message cannot be null\n");
+        fprintf(stderr, "Usage: -f filter -m message\n");
         return EXIT_FAILURE;
     }
 
